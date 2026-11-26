@@ -4,7 +4,8 @@
 <title>Мозгохран</title>
 <style>
 :root{--bg:#eef1f4;--card:#fff;--ink:#1b2430;--mut:#667085;--line:#d5dbe3;--hl:#f2d13b;--acc:#2a4d8f;--red:#b3402f}
-@media(prefers-color-scheme:dark){:root{--bg:#141a22;--card:#1d2631;--ink:#e8edf3;--mut:#93a0b1;--line:#2d3947;--hl:#d9b92a;--acc:#8fb0ee;--red:#e08a7a}}
+@media(prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#141a22;--card:#1d2631;--ink:#e8edf3;--mut:#93a0b1;--line:#2d3947;--hl:#d9b92a;--acc:#8fb0ee;--red:#e08a7a}}
+:root[data-theme=dark]{--bg:#141a22;--card:#1d2631;--ink:#e8edf3;--mut:#93a0b1;--line:#2d3947;--hl:#d9b92a;--acc:#8fb0ee;--red:#e08a7a}
 *{box-sizing:border-box}
 html,body{margin:0;background:var(--bg);color:var(--ink);font:17px/1.5 Georgia,'Times New Roman',serif}
 header{position:sticky;top:0;z-index:5;background:var(--bg);display:flex;align-items:center;gap:8px;padding:10px 14px;border-bottom:2px solid var(--ink)}
@@ -14,7 +15,7 @@ button,.btn{font:inherit;font-size:15px;border:1.5px solid var(--ink);background
 button.pri{background:var(--hl);color:#1b2430;font-weight:bold}
 button.sm{padding:3px 9px;font-size:14px}
 button.dng{color:var(--red);border-color:var(--red)}
-input,textarea{width:100%;font:inherit;color:var(--ink);background:var(--card);border:1.5px solid var(--line);border-radius:6px;padding:9px}
+input,textarea,select{width:100%;font:inherit;color:var(--ink);background:var(--card);border:1.5px solid var(--line);border-radius:6px;padding:9px}
 textarea{min-height:110px;resize:none;overflow:hidden}
 input:focus,textarea:focus,button:focus-visible{outline:3px solid var(--acc);outline-offset:1px}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:14px}
@@ -25,7 +26,7 @@ input:focus,textarea:focus,button:focus-visible{outline:3px solid var(--acc);out
 .ch{margin:16px 0 6px;display:flex;align-items:center;gap:6px;font-weight:bold;font-size:18px;border-bottom:1.5px solid var(--line);padding-bottom:4px}
 .ch span{flex:1}
 .pr{display:flex;align-items:center;gap:8px;padding:11px 12px;background:var(--card);border:1.5px solid var(--line);border-radius:6px;margin:6px 0;cursor:pointer}
-.pr span{flex:1}.dot{width:10px;height:10px;border-radius:50%;background:var(--line)}.dot.f{background:var(--acc)}.dot.r{background:var(--hl);border:1.5px solid var(--ink)}
+.pr span{flex:1}.dot{width:10px;height:10px;border-radius:50%;background:var(--line)}.dot.read{background:var(--mut)}.dot.noted{background:var(--acc)}.dot.learned{background:#3a9d5d}.bar{height:8px;background:var(--line);border-radius:4px;overflow:hidden;margin:6px 0}.bar i{display:block;height:100%;background:#3a9d5d}.cn{background:var(--card);border:1.5px solid var(--line);border-radius:8px;padding:10px;margin:10px 0}.cn input{margin-bottom:6px}h3{margin:22px 0 6px;font-size:18px}.dot.r{background:var(--hl);border:1.5px solid var(--ink)}
 label{display:block;font-size:15px;color:var(--mut);margin:16px 0 4px}
 label.hl b{background:var(--hl);color:#1b2430;padding:0 5px}
 .card{background:var(--card);border:1.5px solid var(--ink);border-radius:10px;padding:22px;margin:14px 0;min-height:200px;white-space:pre-wrap}
@@ -50,12 +51,12 @@ nav a{flex:none;padding:10px 22px}
 @media(prefers-reduced-motion:no-preference){button:active{transform:translateY(1px)}}
 </style></head><body>
 <header><h1 id="ttl">Конспекты</h1><span id="act"></span></header>
-<nav><a href="#/" id="n1">Книги</a><a href="#/s" id="n2">Поиск</a><a href="#/r" id="n3">Повторение</a><a href="#/x" id="n4">Копия</a></nav>
+<nav><a href="#/" id="n1">Книги</a><a href="#/s" id="n2">Поиск</a><a href="#/r" id="n3">Повторение</a><a href="#/x" id="n4">Ещё</a></nav>
 <main id="app"></main>
 <div id="wide" hidden><section id="c1"></section><section id="c2"></section><section id="c3"></section></div>
 
 <script>
-let S;try{S=JSON.parse(localStorage.getItem('lib')||'')||{books:[]}}catch(e){S={books:[]}}
+let S;
 const save=()=>{try{localStorage.setItem('lib',JSON.stringify(S))}catch(e){alert('Память заполнена. Сделай копию и удали лишнее.')}};
 const uid=()=>Math.random().toString(36).slice(2,9);
 const esc=s=>String(s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -75,7 +76,7 @@ function render(){
   window.scrollTo(0,0);return}
  const bid=(k=='b'||k=='p'||k=='r')?p[2]:'',c2=$('#c2'),st=c2.scrollTop;
  head('','');
- $('#c1').innerHTML='<div class="ph"><b>Книги</b><button class="sm pri" onclick="addBook()">+ Книга</button></div>'+(S.books.map(b=>`<div class="pr ${b.id==bid?'cur':''}" onclick="go('/b/${b.id}')"><span>${esc(b.title)}</span></div>`).join('')||'<div class="mut">Пока пусто</div>');
+ $('#c1').innerHTML=banner()+'<div class="ph"><b>Книги</b><button class="sm pri" onclick="addBook()">+ Книга</button></div>'+(S.books.map(b=>`<div class="pr ${b.id==bid?'cur':''}" onclick="go('/b/${b.id}')"><span>${esc(b.title)}</span></div>`).join('')||'<div class="mut">Пока пусто</div>');
  c2.innerHTML=book(bid)?tree(bid,k=='p'?p[4]:''):'<div class="emp">Выбери книгу слева</div>';c2.scrollTop=st;
  app=$('#c3');
  if(k=='p')note(p[2],p[3],p[4]);else if(k=='s')srch();else if(k=='r')rvw(p[2]);else if(k=='x')bkp();else app.innerHTML='<div class="emp">'+(k=='b'?'Выбери параграф':'Выбери книгу')+'</div>'}
@@ -83,8 +84,8 @@ addEventListener('hashchange',render);matchMedia('(min-width:1000px)').addEventL
 
 function lib(){
  head('Мои книги','<button class="pri" onclick="addBook()">+ Книга</button>');
- app.innerHTML=S.books.length?'<div class="grid">'+S.books.map(b=>`<div class="book" onclick="go('/b/${b.id}')"><div class="cv" style="${b.cover?`background-image:url(${b.cover})`:''}">${b.cover?'':'📖'}</div><div class="t">${esc(b.title)}<small>${esc(b.author)}</small></div></div>`).join('')+'</div>'
- :'<div class="emp">Здесь пока пусто.<br>Добавь первую книгу кнопкой «+ Книга».</div>'}
+ app.innerHTML=banner()+(S.books.length?'<div class="grid">'+S.books.map(b=>`<div class="book" onclick="go('/b/${b.id}')"><div class="cv" style="${b.cover?`background-image:url(${b.cover})`:''}">${b.cover?'':'📖'}</div><div class="t">${esc(b.title)}<small>${esc(b.author)}</small></div></div>`).join('')+'</div>'
+ :'<div class="emp">Здесь пока пусто.<br>Добавь первую книгу кнопкой «+ Книга».</div>')}
 
 function addBook(){app=W()?$('#c3'):$('#app');
  head('Новая книга','');
@@ -92,65 +93,80 @@ function addBook(){app=W()?$('#c3'):$('#app');
  $('#bf').onchange=e=>shrink(e.target.files[0],d=>{window._cv=d;$('#pv').src=d;$('#pv').style.display='block'})}
 function shrink(f,cb){if(!f)return;const r=new FileReader();r.onload=()=>{const im=new Image();im.onload=()=>{const k=Math.min(1,420/Math.max(im.width,im.height)),c=document.createElement('canvas');c.width=im.width*k;c.height=im.height*k;c.getContext('2d').drawImage(im,0,0,c.width,c.height);cb(c.toDataURL('image/jpeg',.72))};im.src=r.result};r.readAsDataURL(f)}
 function saveBook(){const t=$('#bt').value.trim();if(!t){alert('Впиши название книги');return}
- const b={id:uid(),title:t,author:$('#ba').value.trim(),cover:window._cv||'',chapters:[]};window._cv=null;S.books.push(b);save();go('/b/'+b.id)}
+ const b={id:uid(),title:t,author:$('#ba').value.trim(),cover:window._cv||'',chapters:[],start:1};window._cv=null;S.books.push(b);save();go('/b/'+b.id)}
 
 function bk(id){const b=book(id);if(!b){go('/');return}head(b.title,'');app.innerHTML=tree(id,'')}
-function tree(id,cur){const b=book(id);
- return `<div class="ph"><b>${esc(b.title)}</b><span><button class="sm" onclick="editBook('${id}')">Изменить</button> <button class="sm pri" onclick="go('/r/${id}')">Повтор</button></span></div>`+
- (b.chapters.map(c=>`<div class="ch"><span>${esc(c.title)}</span><button class="sm" onclick="addPar('${id}','${c.id}')">+ §</button><button class="sm" onclick="renCh('${id}','${c.id}')">✎</button><button class="sm dng" onclick="delCh('${id}','${c.id}')">×</button></div>`+
- (c.paras.map(p=>`<div class="pr ${p.id==cur?'cur':''}" onclick="go('/p/${id}/${c.id}/${p.id}')"><i class="dot ${p.back?'r':(p.def?'f':'')}"></i><span>${esc(p.title)}</span></div>`).join('')||'<div class="mut">Параграфов пока нет</div>')).join('')||'<div class="emp">Добавь первую главу.</div>')+
- `<p><button class="pri" onclick="addCh('${id}')">+ Глава</button></p><p class="mut" style="font-size:14px">Синяя точка: определение записано. Жёлтая: нужно вернуться.</p>`}
+function tree(id,cur){const b=book(id),all=b.chapters.reduce((a,c)=>a.concat(c.paras),[]),ln=all.filter(p=>p.status=='learned').length,pc=all.length?Math.round(ln*100/all.length):0;
+ return `<div class="ph"><b>${esc(b.title)}</b><span><button class="sm" onclick="editBook('${id}')">Изменить</button> <button class="sm pri" onclick="go('/r/${id}')">Повтор</button></span></div><div class="bar"><i style="width:${pc}%"></i></div><div class="mut" style="font-size:14px">Выучено: ${ln} из ${all.length} (${pc}%)</div>`+
+ (b.chapters.map((c,ci)=>`<div class="ch"><span>Глава ${b.start+ci}. ${esc(c.title)}</span><button class="sm" onclick="addPar('${id}','${c.id}')">+ §</button><button class="sm" onclick="chMenu('${id}','${c.id}')">⋯</button></div>`+(c.paras.map((p,pi)=>`<div class="pr ${p.id==cur?'cur':''}" onclick="go('/p/${id}/${c.id}/${p.id}')"><i class="dot ${p.back?'r':p.status}"></i><span>${b.start+ci}.${pi+1} ${esc(p.title)}</span></div>`).join('')||'<div class="mut">Параграфов пока нет</div>')).join('')||'<div class="emp">Добавь первую главу.</div>')+
+ `<p><button class="pri" onclick="addCh('${id}')">+ Глава</button></p><p class="mut" style="font-size:14px">Точка: жёлтая «вернуться», синяя «законспектирован», зелёная «выучен».</p>`}
+const DAY=864e5,STEPS=[1,3,7,14,30];
+function migrate(d){d.books=d.books||[];d.trash=d.trash||[];d.cfg=d.cfg||{fs:17,theme:'auto'};
+ d.books.forEach(b=>{b.start=b.start||1;(b.chapters||[]).forEach(c=>(c.paras||[]).forEach(p=>{
+  if(!p.concepts){p.concepts=[];if(p.def||p.simple)p.concepts.push({id:uid(),term:p.title,def:p.def||'',simple:p.simple||'',page:'',step:0,due:0});p.status=p.concepts.length?'noted':'new'}
+  delete p.def;delete p.simple;p.status=p.status||'new'}))});return d}
+function applyCfg(){document.body.style.fontSize=S.cfg.fs+'px';const r=document.documentElement;S.cfg.theme=='auto'?r.removeAttribute('data-theme'):r.setAttribute('data-theme',S.cfg.theme)}
+function cfg(k,d){if(k=='fs')S.cfg.fs=Math.min(26,Math.max(14,S.cfg.fs+d));else S.cfg.theme={auto:'light',light:'dark',dark:'auto'}[S.cfg.theme];save();applyCfg();bkp()}
+const dueCards=bid=>{const o=[],t=Date.now();S.books.filter(b=>!bid||b.id==bid).forEach(b=>b.chapters.forEach(c=>c.paras.forEach(p=>p.concepts.forEach(k=>{if((k.def||k.simple)&&(k.due||0)<=t)o.push(k)}))));return o};
+const banner=()=>{const d=dueCards().length;return d?`<div class="hit" onclick="go('/r')"><b>К повторению сегодня: ${d}</b><small>Нажми, чтобы начать</small></div>`:''};
+function menu(t,items){const o=document.createElement('div');o.className='ov';o.innerHTML=`<div class="dlg"><b>${esc(t)}</b>${items.map((x,i)=>`<button data-i="${i}" class="${x[2]||''}">${esc(x[0])}</button>`).join('')}<button class="g">Закрыть</button></div>`;document.body.appendChild(o);o.onclick=e=>{const i=e.target.dataset.i;if(e.target==o||e.target.classList.contains('g'))o.remove();else if(i!=null){o.remove();items[i][1]()}}}
+function mv(a,i,d){const j=i+d;if(j<0||j>=a.length)return;[a[i],a[j]]=[a[j],a[i]];save();render()}
+function mvPar(b,c,p,d){const a=book(b).chapters.find(k=>k.id==c).paras;mv(a,a.findIndex(k=>k.id==p),d)}
+function chMenu(b,c){const B=book(b),i=B.chapters.findIndex(k=>k.id==c);menu('Глава',[['Переименовать',()=>renCh(b,c)],['Поднять выше',()=>mv(B.chapters,i,-1)],['Опустить ниже',()=>mv(B.chapters,i,1)],['Удалить главу',()=>delCh(b,c),'dng']])}
+function toTrash(type,item,b,c){S.trash.push({id:uid(),type,item,b,c,t:Date.now()});S.trash=S.trash.filter(x=>Date.now()-x.t<30*DAY);save()}
+function restore(id){const x=S.trash.find(k=>k.id==id);if(!x)return;
+ if(x.type=='book')S.books.push(x.item);
+ else{const B=book(x.b);if(!B){alert('Книга удалена. Сначала верни книгу.');return}
+  if(x.type=='chapter')B.chapters.push(x.item);
+  else{const C=B.chapters.find(k=>k.id==x.c);if(!C){alert('Глава удалена. Сначала верни главу.');return}C.paras.push(x.item)}}
+ S.trash=S.trash.filter(k=>k.id!=id);save();bkp()}
+function wipe(id){if(!confirm('Удалить навсегда?'))return;S.trash=S.trash.filter(k=>k.id!=id);save();bkp()}
+function addCn(b,c,p){book(b).chapters.find(k=>k.id==c).paras.find(k=>k.id==p).concepts.push({id:uid(),term:'',def:'',simple:'',page:'',step:0,due:0});save();render()}
+function delCn(b,c,p,k){if(!confirm('Удалить понятие?'))return;const P=book(b).chapters.find(k=>k.id==c).paras.find(k=>k.id==p);P.concepts=P.concepts.filter(x=>x.id!=k);save();render()}
 function ask(t,v,cb){const o=document.createElement('div');o.className='ov';o.innerHTML=`<div class="dlg"><b>${esc(t)}</b><input value="${esc(v||'')}"><div class="row"><button class="g">Отмена</button><button class="pri g">OK</button></div></div>`;document.body.appendChild(o);const i=o.querySelector('input'),ok=()=>{const x=i.value.trim();o.remove();if(x)cb(x)};i.focus();i.select();o.querySelector('.pri').onclick=ok;o.querySelector('.g').onclick=()=>o.remove();i.onkeydown=e=>{if(e.key=='Enter')ok();if(e.key=='Escape')o.remove()}}
 function addCh(id){ask('Название главы','',t=>{book(id).chapters.push({id:uid(),title:t,paras:[]});save();render()})}
 function renCh(b,c){const x=book(b).chapters.find(k=>k.id==c);ask('Название главы',x.title,t=>{x.title=t;save();render()})}
-function delCh(b,c){if(!confirm('Удалить главу со всеми конспектами?'))return;const B=book(b);B.chapters=B.chapters.filter(k=>k.id!=c);save();render()}
-function addPar(b,c){ask('Название параграфа','',t=>{const p={id:uid(),title:t,def:'',simple:'',notes:'',q:'',back:false};book(b).chapters.find(k=>k.id==c).paras.push(p);save();go(`/p/${b}/${c}/${p.id}`)})}
+function delCh(b,c){if(!confirm('Удалить главу? Её можно вернуть из корзины в течение 30 дней.'))return;const B=book(b);toTrash('chapter',B.chapters.find(k=>k.id==c),b);B.chapters=B.chapters.filter(k=>k.id!=c);save();render()}
+function addPar(b,c){ask('Название параграфа','',t=>{const p={id:uid(),title:t,concepts:[],notes:'',q:'',back:false,status:'new'};book(b).chapters.find(k=>k.id==c).paras.push(p);save();go(`/p/${b}/${c}/${p.id}`)})}
 function editBook(id){app=W()?$('#c3'):$('#app');const b=book(id);
  head('Изменить книгу','');
- app.innerHTML=`<label>Название</label><input id="bt" value="${esc(b.title)}"><label>Автор</label><input id="ba" value="${esc(b.author)}"><label>Новая обложка</label><input type="file" id="bf" accept="image/*"><p><button class="pri" onclick="upBook('${id}')">Сохранить</button> <button onclick="render()">Отмена</button></p><p><button class="dng" onclick="delBook('${id}')">Удалить книгу</button></p>`;
+ app.innerHTML=`<label>Название</label><input id="bt" value="${esc(b.title)}"><label>Автор</label><input id="ba" value="${esc(b.author)}"><label>Номер первой главы в учебнике</label><input id="bn" type="number" value="${b.start}"><label>Новая обложка</label><input type="file" id="bf" accept="image/*"><p><button class="pri" onclick="upBook('${id}')">Сохранить</button> <button onclick="render()">Отмена</button></p><p><button class="dng" onclick="delBook('${id}')">Удалить книгу</button></p>`;
  $('#bf').onchange=e=>shrink(e.target.files[0],d=>{window._cv=d})}
-function upBook(id){const b=book(id);b.title=$('#bt').value.trim()||b.title;b.author=$('#ba').value.trim();if(window._cv){b.cover=window._cv;window._cv=null}save();render()}
-function delBook(id){if(!confirm('Удалить книгу и все конспекты?'))return;S.books=S.books.filter(b=>b.id!=id);save();go('/')}
-
+function upBook(id){const b=book(id);b.title=$('#bt').value.trim()||b.title;b.author=$('#ba').value.trim();b.start=parseInt($('#bn').value)||1;if(window._cv){b.cover=window._cv;window._cv=null}save();render()}
+function delBook(id){if(!confirm('Удалить книгу? Её можно вернуть из корзины в течение 30 дней.'))return;toTrash('book',book(id));S.books=S.books.filter(b=>b.id!=id);save();go('/')}
 function note(bi,ci,pi){
  const b=book(bi),c=b&&b.chapters.find(k=>k.id==ci),p=c&&c.paras.find(k=>k.id==pi);if(!p){go('/');return}
- head(c.title,'');
- const F=(k,l,ph)=>`<label class="${k=='def'?'hl':''}">${l}</label><textarea data-k="${k}" placeholder="${ph||''}">${esc(p[k])}</textarea>`;
- app.innerHTML=`<label>Параграф</label><input data-k="title" value="${esc(p.title)}">`+
- F('def','<b>Определение: строго по учебнику</b>','Переписывай слово в слово')+
- F('simple','Простыми словами (моя формулировка, не из учебника)')+
- F('notes','Моё важное: примеры, связи, выводы')+
- F('q','Непонятно / вопросы')+
- `<label style="color:var(--ink)"><input type="checkbox" id="bk" style="width:auto" ${p.back?'checked':''}> Вернуться к этому параграфу</label><p><button class="dng" onclick="delPar('${bi}','${ci}','${pi}')">Удалить параграф</button></p>`;
- app.querySelectorAll('[data-k]').forEach(e=>{e.oninput=()=>{p[e.dataset.k]=e.value;save();grow(e)};grow(e)});
+ const n=(b.start+b.chapters.indexOf(c))+'.'+(c.paras.indexOf(p)+1);head(c.title,'');
+ const ST={new:'Не начат',read:'Прочитан',noted:'Законспектирован',learned:'Выучен'};
+ const cn=k=>`<div class="cn" data-c="${k.id}"><div class="row"><input data-f="term" placeholder="Понятие" value="${esc(k.term)}"><input data-f="page" placeholder="стр." value="${esc(k.page)}" style="width:84px"></div><label class="hl"><b>Определение: строго по учебнику</b></label><textarea data-f="def">${esc(k.def)}</textarea><label>Простыми словами (моя формулировка, не из учебника)</label><textarea data-f="simple">${esc(k.simple)}</textarea><button class="sm dng" onclick="delCn('${bi}','${ci}','${pi}','${k.id}')">Удалить понятие</button></div>`;
+ app.innerHTML=`<div class="mut">Параграф ${n}</div><label>Название</label><input data-k="title" value="${esc(p.title)}"><label>Статус</label><select data-k="status">${Object.keys(ST).map(s=>`<option value="${s}" ${p.status==s?'selected':''}>${ST[s]}</option>`).join('')}</select><h3>Понятия</h3>${p.concepts.map(cn).join('')||'<div class="mut">Понятий пока нет</div>'}<p><button class="pri" onclick="addCn('${bi}','${ci}','${pi}')">+ Понятие</button></p><label>Моё важное: примеры, связи, выводы</label><textarea data-k="notes">${esc(p.notes)}</textarea><label>Непонятно / вопросы</label><textarea data-k="q">${esc(p.q)}</textarea><label style="color:var(--ink)"><input type="checkbox" id="bk" style="width:auto" ${p.back?'checked':''}> Вернуться к этому параграфу</label><div class="row" style="margin-top:14px"><button class="g" onclick="mvPar('${bi}','${ci}','${pi}',-1)">↑ Выше</button><button class="g" onclick="mvPar('${bi}','${ci}','${pi}',1)">↓ Ниже</button></div><p><button class="dng" onclick="delPar('${bi}','${ci}','${pi}')">Удалить параграф</button></p>`;
+ const T=e=>e.tagName=='TEXTAREA';
+ app.querySelectorAll('[data-k]').forEach(e=>{e.oninput=e.onchange=()=>{p[e.dataset.k]=e.value;save();if(T(e))grow(e)};if(T(e))grow(e)});
+ app.querySelectorAll('.cn').forEach(d=>{const k=p.concepts.find(x=>x.id==d.dataset.c);d.querySelectorAll('[data-f]').forEach(e=>{e.oninput=()=>{k[e.dataset.f]=e.value;if(p.status=='new'){p.status='noted';app.querySelector('[data-k=status]').value='noted'}save();if(T(e))grow(e)};if(T(e))grow(e)})});
  $('#bk').onchange=e=>{p.back=e.target.checked;save()}}
 function grow(e){e.style.height='auto';e.style.height=Math.max(110,e.scrollHeight+4)+'px'}
-function delPar(b,c,p){if(!confirm('Удалить параграф?'))return;const C=book(b).chapters.find(k=>k.id==c);C.paras=C.paras.filter(k=>k.id!=p);save();history.back()}
-
+function delPar(b,c,p){if(!confirm('Удалить параграф? Его можно вернуть из корзины в течение 30 дней.'))return;const C=book(b).chapters.find(k=>k.id==c);toTrash('para',C.paras.find(k=>k.id==p),b,c);C.paras=C.paras.filter(k=>k.id!=p);save();history.back()}
 function srch(){
  head('Поиск','');app.innerHTML='<input id="sq" placeholder="Слово из любого конспекта"><div id="sr"></div>';
  $('#sq').oninput=e=>{const q=e.target.value.trim().toLowerCase();if(q.length<2){$('#sr').innerHTML='';return}
-  let o='';S.books.forEach(b=>b.chapters.forEach(c=>c.paras.forEach(p=>{if([p.title,p.def,p.simple,p.notes,p.q].join(' ').toLowerCase().includes(q))o+=`<div class="hit" onclick="go('/p/${b.id}/${c.id}/${p.id}')">${esc(p.title)}<small>${esc(b.title)} → ${esc(c.title)}</small></div>`})));
+  let o='';S.books.forEach(b=>b.chapters.forEach(c=>c.paras.forEach(p=>{if([p.title,p.notes,p.q].concat(p.concepts.map(k=>[k.term,k.def,k.simple,k.page].join(' '))).join(' ').toLowerCase().includes(q))o+=`<div class="hit" onclick="go('/p/${b.id}/${c.id}/${p.id}')">${esc(p.title)}<small>${esc(b.title)} → ${esc(c.title)}</small></div>`})));
   $('#sr').innerHTML=o||'<div class="emp">Ничего не найдено</div>'}}
 
-function rvw(bid){
- head('Повторение','');
- app.innerHTML=`<p>Что повторять?</p><div class="row"><button class="pri g" onclick="startRv('${bid||''}',1)">Только «вернуться»</button><button class="g" onclick="startRv('${bid||''}',0)">Всё с определениями</button></div>`}
-function startRv(bid,only){
- rv.q=[];S.books.filter(b=>!bid||b.id==bid).forEach(b=>b.chapters.forEach(c=>c.paras.forEach(p=>{if((p.def||p.simple)&&(!only||p.back))rv.q.push({b:b.title,p})})));
- rv.q.sort(()=>Math.random()-.5);rv.i=0;rv.open=false;card()}
-function card(){
- head('Повторение','');
- if(!rv.q.length||rv.i>=rv.q.length){app.innerHTML='<div class="emp">'+(rv.q.length?'Круг закончен.':'Нет подходящих параграфов.')+'</div><p><button onclick="go(\'/r\')">Выбрать снова</button></p>';return}
- const x=rv.q[rv.i],p=x.p;
- app.innerHTML=`<div class="mut">${rv.i+1} из ${rv.q.length} · ${esc(x.b)}</div><div class="card"><b>${esc(p.title)}</b>`+(rv.open?`\n\n${esc(p.def)}${p.simple?'\n\nПростыми словами:\n'+esc(p.simple):''}`:'<p class="mut">Сначала вспомни своими словами, потом открой.</p>')+'</div>'+
- (rv.open?`<div class="row"><button class="g" onclick="mark(true)">Повторить ещё</button><button class="pri g" onclick="mark(false)">Помню</button></div>`:`<button class="pri" onclick="rv.open=true;card()">Показать ответ</button>`)}
-function mark(f){rv.q[rv.i].p.back=f;save();rv.i++;rv.open=false;card()}
-
-function bkp(){
- head('Резервная копия','');
- app.innerHTML=`<p class="mut">Копия нужна, если сменишь телефон или переустановишь приложение.</p><button class="pri" onclick="cp()">Скопировать все конспекты</button><label>Восстановить: вставь сюда скопированный текст</label><textarea id="im"></textarea><p><button onclick="imp()">Восстановить</button></p>`}
+function rvw(bid){head('Повторение','');const d=dueCards(bid).length;
+ app.innerHTML=`<p>К повторению сегодня: <b>${d}</b>${d?'':' (всё повторено)'}</p><p><button class="pri" onclick="startRv('${bid||''}','due')">Повторить сегодняшнее</button></p><div class="row"><button class="g" onclick="startRv('${bid||''}','back')">Только «вернуться»</button><button class="g" onclick="startRv('${bid||''}','all')">Всё подряд</button></div><p class="mut" style="font-size:14px">Повтор через 1, 3, 7, 14 и 30 дней. Забытое возвращается через день.</p>`}
+function startRv(bid,mode){const q=[];S.books.filter(b=>!bid||b.id==bid).forEach(b=>b.chapters.forEach(c=>c.paras.forEach(p=>p.concepts.forEach(k=>{if(!(k.def||k.simple))return;if(mode=='due'&&(k.due||0)>Date.now())return;if(mode=='back'&&!p.back)return;q.push({b:b.title,p,k})}))));
+ rv.q=q.sort(()=>Math.random()-.5);rv.i=0;rv.open=false;rv.typed='';card()}
+function card(){head('Повторение','');
+ if(!rv.q.length||rv.i>=rv.q.length){app.innerHTML='<div class="emp">'+(rv.q.length?'Круг закончен.':'Нет подходящих понятий.')+'</div><p><button onclick="go(\'/r\')">Выбрать снова</button></p>';return}
+ const x=rv.q[rv.i],k=x.k;
+ app.innerHTML=`<div class="mut">${rv.i+1} из ${rv.q.length} · ${esc(x.b)}</div><div class="card"><b>${esc(k.term||x.p.title)}</b>`+(rv.open?`\n\n${esc(k.def)}${k.simple?'\n\nПростыми словами:\n'+esc(k.simple):''}${k.page?'\n\nСтр. '+esc(k.page):''}${rv.typed?'\n\nМой ответ:\n'+esc(rv.typed):''}`:'')+'</div>'+
+ (rv.open?`<div class="row"><button class="g" onclick="mark(false)">Не помню</button><button class="pri g" onclick="mark(true)">Помню</button></div>`:`<label>Вспомни и впиши (можно пропустить)</label><textarea id="ty" style="min-height:90px"></textarea><p><button class="pri" onclick="rv.typed=$('#ty').value.trim();rv.open=true;card()">Показать ответ</button></p>`)}
+function mark(ok){const k=rv.q[rv.i].k;if(ok){k.step=(k.step||0)+1;k.due=Date.now()+STEPS[Math.min(k.step-1,STEPS.length-1)]*DAY}else{k.step=0;k.due=Date.now()+DAY;rv.q.push(rv.q[rv.i])}save();rv.i++;rv.open=false;rv.typed='';card()}
+function bkp(){head('Ещё','');
+ const tr=S.trash.map(x=>`<div class="hit"><b>${esc(x.item.title)}</b><small>${{book:'книга',chapter:'глава',para:'параграф'}[x.type]} · ${new Date(x.t).toLocaleDateString('ru-RU')}</small><div class="row" style="margin-top:6px"><button class="sm" onclick="restore('${x.id}')">Вернуть</button><button class="sm dng" onclick="wipe('${x.id}')">Удалить навсегда</button></div></div>`).join('')||'<div class="mut">Корзина пуста</div>';
+ app.innerHTML=`<h3>Вид</h3><div class="row"><button onclick="cfg('fs',-1)">А−</button><button onclick="cfg('fs',1)">А+</button><button class="g" onclick="cfg('theme')">Тема: ${{auto:'как в системе',light:'светлая',dark:'тёмная'}[S.cfg.theme]}</button></div><h3>Резервная копия</h3><p class="mut">Нужна при смене телефона или переустановке.</p><button class="pri" onclick="cp()">Скопировать все конспекты</button><label>Восстановить: вставь сюда скопированный текст</label><textarea id="im"></textarea><p><button onclick="imp()">Восстановить</button></p><h3>Корзина (30 дней)</h3>`+tr}
 async function cp(){const t=JSON.stringify(S);try{await navigator.clipboard.writeText(t);alert('Скопировано. Вставь в заметки или отправь себе в мессенджер.')}catch(e){$('#im').value=t;$('#im').select();alert('Текст выделен в поле ниже, скопируй его вручную.')}}
-function imp(){try{const d=JSON.parse($('#im').value);if(!d.books)throw 0;if(!confirm('Заменить текущие данные скопированными?'))return;S=d;save();go('/')}catch(e){alert('Это не похоже на копию конспектов')}}
+function imp(){try{const d=JSON.parse($('#im').value);if(!d.books)throw 0;if(!confirm('Заменить текущие данные скопированными?'))return;S=migrate(d);save();applyCfg();go('/')}catch(e){alert('Это не похоже на копию конспектов')}}
+try{S=JSON.parse(localStorage.getItem('lib')||'')}catch(e){S=null}S=migrate(S||{books:[]});save();applyCfg();
 render();
 </script></body></html>
