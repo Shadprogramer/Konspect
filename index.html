@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="ru"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Конспекты</title>
+<title>Мозгохран</title>
 <style>
 :root{--bg:#eef1f4;--card:#fff;--ink:#1b2430;--mut:#667085;--line:#d5dbe3;--hl:#f2d13b;--acc:#2a4d8f;--red:#b3402f}
 @media(prefers-color-scheme:dark){:root{--bg:#141a22;--card:#1d2631;--ink:#e8edf3;--mut:#93a0b1;--line:#2d3947;--hl:#d9b92a;--acc:#8fb0ee;--red:#e08a7a}}
@@ -15,7 +15,7 @@ button.pri{background:var(--hl);color:#1b2430;font-weight:bold}
 button.sm{padding:3px 9px;font-size:14px}
 button.dng{color:var(--red);border-color:var(--red)}
 input,textarea{width:100%;font:inherit;color:var(--ink);background:var(--card);border:1.5px solid var(--line);border-radius:6px;padding:9px}
-textarea{min-height:110px;resize:vertical}
+textarea{min-height:110px;resize:none;overflow:hidden}
 input:focus,textarea:focus,button:focus-visible{outline:3px solid var(--acc);outline-offset:1px}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:14px}
 .book{background:var(--card);border:1.5px solid var(--ink);border-radius:4px 10px 10px 4px;overflow:hidden;cursor:pointer;box-shadow:5px 5px 0 var(--line)}
@@ -35,77 +35,96 @@ label.hl b{background:var(--hl);color:#1b2430;padding:0 5px}
 nav{position:fixed;left:0;right:0;bottom:0;display:flex;background:var(--card);border-top:2px solid var(--ink);padding-bottom:env(safe-area-inset-bottom,0)}
 nav a{flex:1;text-align:center;padding:12px 4px;color:var(--ink);text-decoration:none;font-size:15px}
 nav a.on{background:var(--hl);color:#1b2430;font-weight:bold}
+.ov{position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;z-index:20;padding:20px}
+.dlg{background:var(--card);border:2px solid var(--ink);border-radius:10px;padding:18px;width:100%;max-width:420px;display:flex;flex-direction:column;gap:12px}
+.ph{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px}
+.pr.cur{border-color:var(--ink);background:var(--hl);color:#1b2430}
+@media(min-width:1000px){
+html,body{height:100%}body{display:flex;flex-direction:column}
+nav{position:static;border-top:0;border-bottom:2px solid var(--ink);padding-bottom:0}
+nav a{flex:none;padding:10px 22px}
+#wide{display:grid;grid-template-columns:240px 360px 1fr;flex:1;min-height:0}
+#wide[hidden]{display:none}
+#wide>section{overflow:auto;padding:14px;border-right:1.5px solid var(--line)}
+#c3{padding:18px 28px;border-right:0}#c3>*{max-width:780px}}
 @media(prefers-reduced-motion:no-preference){button:active{transform:translateY(1px)}}
 </style></head><body>
 <header><h1 id="ttl">Конспекты</h1><span id="act"></span></header>
-<main id="app"></main>
 <nav><a href="#/" id="n1">Книги</a><a href="#/s" id="n2">Поиск</a><a href="#/r" id="n3">Повторение</a><a href="#/x" id="n4">Копия</a></nav>
+<main id="app"></main>
+<div id="wide" hidden><section id="c1"></section><section id="c2"></section><section id="c3"></section></div>
+
 <script>
 let S;try{S=JSON.parse(localStorage.getItem('lib')||'')||{books:[]}}catch(e){S={books:[]}}
 const save=()=>{try{localStorage.setItem('lib',JSON.stringify(S))}catch(e){alert('Память заполнена. Сделай копию и удали лишнее.')}};
 const uid=()=>Math.random().toString(36).slice(2,9);
 const esc=s=>String(s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-const $=s=>document.querySelector(s),app=$('#app');
+const $=s=>document.querySelector(s);let app=$('#app');const W=()=>matchMedia('(min-width:1000px)').matches;
 const book=id=>S.books.find(b=>b.id==id);
 const go=h=>{location.hash=h};
 let rv={q:[],i:0,open:false};
 
-function head(t,a){$('#ttl').textContent=t;$('#act').innerHTML=a||''}
+function head(t,a){if(W()){$('#ttl').textContent='Мозгохран';$('#act').innerHTML='';return}$('#ttl').textContent=t;$('#act').innerHTML=a||''}
 function render(){
- const h=location.hash.slice(1)||'/',p=h.split('/');
+ const h=location.hash.slice(1)||'/',p=h.split('/'),k=p[1]||'',wd=W();
  ['n1','n2','n3','n4'].forEach(i=>$('#'+i).classList.remove('on'));
- if(h=='/'){$('#n1').classList.add('on');lib()}
- else if(p[1]=='b'){$('#n1').classList.add('on');bk(p[2])}
- else if(p[1]=='p'){$('#n1').classList.add('on');note(p[2],p[3],p[4])}
- else if(p[1]=='s'){$('#n2').classList.add('on');srch()}
- else if(p[1]=='r'){$('#n3').classList.add('on');rvw(p[2])}
- else if(p[1]=='x'){$('#n4').classList.add('on');bkp()}
- else lib();
- window.scrollTo(0,0)}
-addEventListener('hashchange',render);
+ $('#'+({s:'n2',r:'n3',x:'n4'}[k]||'n1')).classList.add('on');
+ $('#app').hidden=wd;$('#wide').hidden=!wd;
+ if(!wd){app=$('#app');
+  if(k=='b')bk(p[2]);else if(k=='p')note(p[2],p[3],p[4]);else if(k=='s')srch();else if(k=='r')rvw(p[2]);else if(k=='x')bkp();else lib();
+  window.scrollTo(0,0);return}
+ const bid=(k=='b'||k=='p'||k=='r')?p[2]:'',c2=$('#c2'),st=c2.scrollTop;
+ head('','');
+ $('#c1').innerHTML='<div class="ph"><b>Книги</b><button class="sm pri" onclick="addBook()">+ Книга</button></div>'+(S.books.map(b=>`<div class="pr ${b.id==bid?'cur':''}" onclick="go('/b/${b.id}')"><span>${esc(b.title)}</span></div>`).join('')||'<div class="mut">Пока пусто</div>');
+ c2.innerHTML=book(bid)?tree(bid,k=='p'?p[4]:''):'<div class="emp">Выбери книгу слева</div>';c2.scrollTop=st;
+ app=$('#c3');
+ if(k=='p')note(p[2],p[3],p[4]);else if(k=='s')srch();else if(k=='r')rvw(p[2]);else if(k=='x')bkp();else app.innerHTML='<div class="emp">'+(k=='b'?'Выбери параграф':'Выбери книгу')+'</div>'}
+addEventListener('hashchange',render);matchMedia('(min-width:1000px)').addEventListener('change',render);
 
 function lib(){
  head('Мои книги','<button class="pri" onclick="addBook()">+ Книга</button>');
  app.innerHTML=S.books.length?'<div class="grid">'+S.books.map(b=>`<div class="book" onclick="go('/b/${b.id}')"><div class="cv" style="${b.cover?`background-image:url(${b.cover})`:''}">${b.cover?'':'📖'}</div><div class="t">${esc(b.title)}<small>${esc(b.author)}</small></div></div>`).join('')+'</div>'
  :'<div class="emp">Здесь пока пусто.<br>Добавь первую книгу кнопкой «+ Книга».</div>'}
 
-function addBook(){
- head('Новая книга','<button onclick="history.back()">Отмена</button>');
- app.innerHTML=`<label>Название</label><input id="bt"><label>Автор</label><input id="ba"><label>Обложка (из галереи)</label><input type="file" id="bf" accept="image/*"><p><img id="pv" style="max-width:140px;display:none;border:1.5px solid var(--ink)"></p><button class="pri" onclick="saveBook()">Сохранить книгу</button>`;
+function addBook(){app=W()?$('#c3'):$('#app');
+ head('Новая книга','');
+ app.innerHTML=`<label>Название</label><input id="bt"><label>Автор</label><input id="ba"><label>Обложка (из галереи)</label><input type="file" id="bf" accept="image/*"><p><img id="pv" style="max-width:140px;display:none;border:1.5px solid var(--ink)"></p><button class="pri" onclick="saveBook()">Сохранить книгу</button> <button onclick="render()">Отмена</button>`;
  $('#bf').onchange=e=>shrink(e.target.files[0],d=>{window._cv=d;$('#pv').src=d;$('#pv').style.display='block'})}
 function shrink(f,cb){if(!f)return;const r=new FileReader();r.onload=()=>{const im=new Image();im.onload=()=>{const k=Math.min(1,420/Math.max(im.width,im.height)),c=document.createElement('canvas');c.width=im.width*k;c.height=im.height*k;c.getContext('2d').drawImage(im,0,0,c.width,c.height);cb(c.toDataURL('image/jpeg',.72))};im.src=r.result};r.readAsDataURL(f)}
 function saveBook(){const t=$('#bt').value.trim();if(!t){alert('Впиши название книги');return}
  const b={id:uid(),title:t,author:$('#ba').value.trim(),cover:window._cv||'',chapters:[]};window._cv=null;S.books.push(b);save();go('/b/'+b.id)}
 
-function bk(id){
- const b=book(id);if(!b){go('/');return}
- head(b.title,`<button class="sm" onclick="editBook('${id}')">Изменить</button> <button class="sm pri" onclick="go('/r/${id}')">Повтор</button>`);
- app.innerHTML=(b.chapters.map(c=>`<div class="ch"><span>${esc(c.title)}</span><button class="sm" onclick="addPar('${id}','${c.id}')">+ §</button><button class="sm" onclick="renCh('${id}','${c.id}')">✎</button><button class="sm dng" onclick="delCh('${id}','${c.id}')">×</button></div>`+
- (c.paras.map(p=>`<div class="pr" onclick="go('/p/${id}/${c.id}/${p.id}')"><i class="dot ${p.back?'r':(p.def?'f':'')}"></i><span>${esc(p.title)}</span></div>`).join('')||'<div class="mut">Параграфов пока нет</div>')).join('')||'<div class="emp">Добавь первую главу.</div>')+
+function bk(id){const b=book(id);if(!b){go('/');return}head(b.title,'');app.innerHTML=tree(id,'')}
+function tree(id,cur){const b=book(id);
+ return `<div class="ph"><b>${esc(b.title)}</b><span><button class="sm" onclick="editBook('${id}')">Изменить</button> <button class="sm pri" onclick="go('/r/${id}')">Повтор</button></span></div>`+
+ (b.chapters.map(c=>`<div class="ch"><span>${esc(c.title)}</span><button class="sm" onclick="addPar('${id}','${c.id}')">+ §</button><button class="sm" onclick="renCh('${id}','${c.id}')">✎</button><button class="sm dng" onclick="delCh('${id}','${c.id}')">×</button></div>`+
+ (c.paras.map(p=>`<div class="pr ${p.id==cur?'cur':''}" onclick="go('/p/${id}/${c.id}/${p.id}')"><i class="dot ${p.back?'r':(p.def?'f':'')}"></i><span>${esc(p.title)}</span></div>`).join('')||'<div class="mut">Параграфов пока нет</div>')).join('')||'<div class="emp">Добавь первую главу.</div>')+
  `<p><button class="pri" onclick="addCh('${id}')">+ Глава</button></p><p class="mut" style="font-size:14px">Синяя точка: определение записано. Жёлтая: нужно вернуться.</p>`}
-function addCh(id){const t=prompt('Название главы');if(!t)return;book(id).chapters.push({id:uid(),title:t,paras:[]});save();render()}
-function renCh(b,c){const x=book(b).chapters.find(k=>k.id==c),t=prompt('Название главы',x.title);if(!t)return;x.title=t;save();render()}
+function ask(t,v,cb){const o=document.createElement('div');o.className='ov';o.innerHTML=`<div class="dlg"><b>${esc(t)}</b><input value="${esc(v||'')}"><div class="row"><button class="g">Отмена</button><button class="pri g">OK</button></div></div>`;document.body.appendChild(o);const i=o.querySelector('input'),ok=()=>{const x=i.value.trim();o.remove();if(x)cb(x)};i.focus();i.select();o.querySelector('.pri').onclick=ok;o.querySelector('.g').onclick=()=>o.remove();i.onkeydown=e=>{if(e.key=='Enter')ok();if(e.key=='Escape')o.remove()}}
+function addCh(id){ask('Название главы','',t=>{book(id).chapters.push({id:uid(),title:t,paras:[]});save();render()})}
+function renCh(b,c){const x=book(b).chapters.find(k=>k.id==c);ask('Название главы',x.title,t=>{x.title=t;save();render()})}
 function delCh(b,c){if(!confirm('Удалить главу со всеми конспектами?'))return;const B=book(b);B.chapters=B.chapters.filter(k=>k.id!=c);save();render()}
-function addPar(b,c){const t=prompt('Название параграфа');if(!t)return;const p={id:uid(),title:t,def:'',simple:'',notes:'',q:'',back:false};book(b).chapters.find(k=>k.id==c).paras.push(p);save();go(`/p/${b}/${c}/${p.id}`)}
-function editBook(id){const b=book(id);
- head('Изменить книгу','<button onclick="history.back()">Назад</button>');
- app.innerHTML=`<label>Название</label><input id="bt" value="${esc(b.title)}"><label>Автор</label><input id="ba" value="${esc(b.author)}"><label>Новая обложка</label><input type="file" id="bf" accept="image/*"><p><button class="pri" onclick="upBook('${id}')">Сохранить</button></p><p><button class="dng" onclick="delBook('${id}')">Удалить книгу</button></p>`;
+function addPar(b,c){ask('Название параграфа','',t=>{const p={id:uid(),title:t,def:'',simple:'',notes:'',q:'',back:false};book(b).chapters.find(k=>k.id==c).paras.push(p);save();go(`/p/${b}/${c}/${p.id}`)})}
+function editBook(id){app=W()?$('#c3'):$('#app');const b=book(id);
+ head('Изменить книгу','');
+ app.innerHTML=`<label>Название</label><input id="bt" value="${esc(b.title)}"><label>Автор</label><input id="ba" value="${esc(b.author)}"><label>Новая обложка</label><input type="file" id="bf" accept="image/*"><p><button class="pri" onclick="upBook('${id}')">Сохранить</button> <button onclick="render()">Отмена</button></p><p><button class="dng" onclick="delBook('${id}')">Удалить книгу</button></p>`;
  $('#bf').onchange=e=>shrink(e.target.files[0],d=>{window._cv=d})}
-function upBook(id){const b=book(id);b.title=$('#bt').value.trim()||b.title;b.author=$('#ba').value.trim();if(window._cv){b.cover=window._cv;window._cv=null}save();history.back()}
+function upBook(id){const b=book(id);b.title=$('#bt').value.trim()||b.title;b.author=$('#ba').value.trim();if(window._cv){b.cover=window._cv;window._cv=null}save();render()}
 function delBook(id){if(!confirm('Удалить книгу и все конспекты?'))return;S.books=S.books.filter(b=>b.id!=id);save();go('/')}
 
 function note(bi,ci,pi){
  const b=book(bi),c=b&&b.chapters.find(k=>k.id==ci),p=c&&c.paras.find(k=>k.id==pi);if(!p){go('/');return}
- head(c.title,`<button class="sm dng" onclick="delPar('${bi}','${ci}','${pi}')">Удалить</button>`);
+ head(c.title,'');
  const F=(k,l,ph)=>`<label class="${k=='def'?'hl':''}">${l}</label><textarea data-k="${k}" placeholder="${ph||''}">${esc(p[k])}</textarea>`;
  app.innerHTML=`<label>Параграф</label><input data-k="title" value="${esc(p.title)}">`+
  F('def','<b>Определение: строго по учебнику</b>','Переписывай слово в слово')+
  F('simple','Простыми словами (моя формулировка, не из учебника)')+
  F('notes','Моё важное: примеры, связи, выводы')+
  F('q','Непонятно / вопросы')+
- `<label style="color:var(--ink)"><input type="checkbox" id="bk" style="width:auto" ${p.back?'checked':''}> Вернуться к этому параграфу</label>`;
- app.querySelectorAll('[data-k]').forEach(e=>e.oninput=()=>{p[e.dataset.k]=e.value;save()});
+ `<label style="color:var(--ink)"><input type="checkbox" id="bk" style="width:auto" ${p.back?'checked':''}> Вернуться к этому параграфу</label><p><button class="dng" onclick="delPar('${bi}','${ci}','${pi}')">Удалить параграф</button></p>`;
+ app.querySelectorAll('[data-k]').forEach(e=>{e.oninput=()=>{p[e.dataset.k]=e.value;save();grow(e)};grow(e)});
  $('#bk').onchange=e=>{p.back=e.target.checked;save()}}
+function grow(e){e.style.height='auto';e.style.height=Math.max(110,e.scrollHeight+4)+'px'}
 function delPar(b,c,p){if(!confirm('Удалить параграф?'))return;const C=book(b).chapters.find(k=>k.id==c);C.paras=C.paras.filter(k=>k.id!=p);save();history.back()}
 
 function srch(){
